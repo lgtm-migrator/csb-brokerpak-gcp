@@ -1,4 +1,4 @@
-package acceptance_test
+package google_postgresql_test
 
 import (
 	"csbbrokerpakgcp/acceptance-tests/helpers/apps"
@@ -6,9 +6,6 @@ import (
 	"csbbrokerpakgcp/acceptance-tests/helpers/matchers"
 	"csbbrokerpakgcp/acceptance-tests/helpers/random"
 	"csbbrokerpakgcp/acceptance-tests/helpers/services"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("PostgreSQL", Label("postgresql"), func() {

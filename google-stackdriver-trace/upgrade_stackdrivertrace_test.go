@@ -1,4 +1,4 @@
-package upgrade_test
+package google_stackdriver_trace_test
 
 import (
 	"context"
@@ -14,9 +14,6 @@ import (
 	trace "cloud.google.com/go/trace/apiv1"
 	"google.golang.org/api/option"
 	cloudtracepb "google.golang.org/genproto/googleapis/devtools/cloudtrace/v1"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("UpgradeStackdrivertraceTest", Label("stackdrivertrace"), func() {

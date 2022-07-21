@@ -1,4 +1,4 @@
-package upgrade_test
+package google_spanner_test
 
 import (
 	"csbbrokerpakgcp/acceptance-tests/helpers/apps"
@@ -6,34 +6,25 @@ import (
 	"csbbrokerpakgcp/acceptance-tests/helpers/matchers"
 	"csbbrokerpakgcp/acceptance-tests/helpers/random"
 	"csbbrokerpakgcp/acceptance-tests/helpers/services"
-	"fmt"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("UpgradeDataprocTest", Label("dataproc"), func() {
+var _ = Describe("UpgradeSpannerTest", Label("spanner"), func() {
 	When("upgrading broker version", func() {
 		It("should continue to work", func() {
 			By("pushing latest released broker version")
 			serviceBroker := brokers.Create(
-				brokers.WithPrefix("csb-dataproc"),
+				brokers.WithPrefix("csb-spanner"),
 				brokers.WithSourceDir(releasedBuildDir),
 				brokers.WithReleaseEnv(),
 			)
 			defer serviceBroker.Delete()
 
 			By("creating a service instance")
-			serviceInstance := services.CreateInstance(
-				"csb-google-dataproc",
-				"standard",
-				services.WithBroker(serviceBroker),
-				services.WithParameters(map[string]any{"name": fmt.Sprintf("csb-dataproc-%s", serviceBroker.Name)}),
-			)
+			serviceInstance := services.CreateInstance("csb-google-spanner", "small", services.WithBroker(serviceBroker))
 			defer serviceInstance.Delete()
 
 			By("pushing the unstarted app")
-			appOne := apps.Push(apps.WithApp(apps.Dataproc))
+			appOne := apps.Push(apps.WithApp(apps.Spanner))
 			defer apps.Delete(appOne)
 
 			By("binding the app to the service instance")
@@ -45,13 +36,13 @@ var _ = Describe("UpgradeDataprocTest", Label("dataproc"), func() {
 			By("checking that the app environment has a credhub reference for credentials")
 			Expect(binding.Credential()).To(matchers.HaveCredHubRef)
 
-			By("running a job")
-			jobName := random.Hexadecimal()
-			appOne.PUT("", jobName)
+			By("setting a key-value using the app")
+			key := random.Hexadecimal()
+			value := random.Hexadecimal()
+			appOne.PUT(value, key)
 
-			By("getting the job status")
-			status := appOne.GET(jobName)
-			Expect(status).To(Equal("DONE"))
+			By("getting the value using the same app")
+			Expect(appOne.GET(key)).To(Equal(value))
 
 			By("pushing the development version of the broker")
 			serviceBroker.UpdateBroker(developmentBuildDir)
@@ -59,17 +50,8 @@ var _ = Describe("UpgradeDataprocTest", Label("dataproc"), func() {
 			By("upgrading service instance")
 			serviceInstance.Upgrade()
 
-			By("checking the job status is still accessible")
-			Expect(appOne.GET(jobName)).To(Equal("DONE"))
-
-			By("updating the instance config params")
-			serviceInstance.Update("-c", `{"worker_count":3}`)
-
-			By("checking the job status is still accessible")
-			Expect(appOne.GET(jobName)).To(Equal("DONE"))
-
-			By("deleting the job")
-			appOne.DELETE(jobName)
+			By("checking previously written data still accessible")
+			Expect(appOne.GET(key)).To(Equal(value))
 		})
 	})
 })
